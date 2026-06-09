@@ -27,6 +27,13 @@ public class Miembro {
     private Long cargoId;
     private LocalDate fechaCargo;
     private String enlaceWhatsapp;
+    private String nifCif;
+    private String nacionalidad;
+    private String domicilio;
+    private LocalDate fechaNacimiento;
+    private LocalDate fechaAlta;
+    private String observaciones;
+    private LocalDate fechaBaja;
 
     @MappedCollection(idColumn = "miembro_id")
     private Set<HistorialCargo> historialCargos = new HashSet<>();

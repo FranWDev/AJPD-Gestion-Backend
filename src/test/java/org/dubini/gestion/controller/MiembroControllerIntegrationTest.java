@@ -185,4 +185,54 @@ public class MiembroControllerIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Miembro no encontrado"));
     }
+
+    @Test
+    public void testMiembroNuevosCamposYBajaReactivacion() throws Exception {
+        String body = new JSONObject()
+                .put("nombreRazonSocial", "Juan Perez")
+                .put("centroId", centroId)
+                .put("telefono", "123456789")
+                .put("correo", "juan@test.com")
+                .put("nifCif", "12345678A")
+                .put("nacionalidad", "Española")
+                .put("domicilio", "Calle Principal 123")
+                .put("fechaNacimiento", "1990-01-01")
+                .put("fechaAlta", "2026-06-01")
+                .put("observaciones", "Ninguna observacion")
+                .toString();
+
+        String createResponse = mockMvc.perform(post("/api/miembros")
+                        .header("Authorization", authHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nifCif").value("12345678A"))
+                .andExpect(jsonPath("$.nacionalidad").value("Española"))
+                .andExpect(jsonPath("$.domicilio").value("Calle Principal 123"))
+                .andExpect(jsonPath("$.fechaNacimiento").value("1990-01-01"))
+                .andExpect(jsonPath("$.fechaAlta").value("2026-06-01"))
+                .andExpect(jsonPath("$.observaciones").value("Ninguna observacion"))
+                .andExpect(jsonPath("$.fechaBaja").isEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        Long miembroId = new JSONObject(createResponse).getLong("id");
+
+        String bajaBody = new JSONObject()
+                .put("fechaBaja", "2026-06-05")
+                .toString();
+
+        mockMvc.perform(put("/api/miembros/" + miembroId + "/baja")
+                        .header("Authorization", authHeader)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(bajaBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fechaBaja").value("2026-06-05"));
+
+        mockMvc.perform(delete("/api/miembros/" + miembroId + "/baja")
+                        .header("Authorization", authHeader))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fechaBaja").isEmpty());
+    }
 }

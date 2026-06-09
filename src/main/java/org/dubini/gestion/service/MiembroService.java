@@ -51,7 +51,7 @@ public class MiembroService {
                 .collect(Collectors.toSet());
 
         Set<Long> historyCargoIds = members.stream()
-                .flatMap(m -> m.getHistorialCargos().stream())
+                .flatMap(m -> m.getHistorialCargos() == null ? java.util.stream.Stream.empty() : m.getHistorialCargos().stream())
                 .map(HistorialCargo::getCargoId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -85,9 +85,9 @@ public class MiembroService {
         if (m.getCargoId() != null) {
             cargoRepo.findById(m.getCargoId()).ifPresent(c -> cargoMap.put(c.getId(), c));
         }
-        Set<Long> historyCargoIds = m.getHistorialCargos().stream()
+        Set<Long> historyCargoIds = m.getHistorialCargos() != null ? m.getHistorialCargos().stream()
                 .map(HistorialCargo::getCargoId)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toSet()) : Collections.emptySet();
         Map<Long, Cargo> historyCargoMap = new HashMap<>();
         if (!historyCargoIds.isEmpty()) {
             cargoRepo.findAllById(historyCargoIds).forEach(c -> historyCargoMap.put(c.getId(), c));
@@ -100,6 +100,7 @@ public class MiembroService {
         Miembro m = new Miembro();
         DtoMapper.updateEntity(m, dto);
         m.setFechaCargo(dto.getFechaCargo() != null ? dto.getFechaCargo() : LocalDate.now());
+        m.setFechaAlta(dto.getFechaAlta() != null ? dto.getFechaAlta() : LocalDate.now());
 
         if (dto.getCargoId() != null) {
             HistorialCargo hc = new HistorialCargo(null, m.getFechaCargo(), null, dto.getCargoId());
@@ -173,5 +174,25 @@ public class MiembroService {
     public void deleteMiembro(Long id) {
         Miembro m = miembroRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
         miembroRepo.delete(m);
+    }
+
+    @Transactional
+    public MiembroResponseDto darDeBaja(Long id, Map<String, String> body) {
+        LocalDate fechaBaja = null;
+        if (body != null && body.containsKey("fechaBaja") && body.get("fechaBaja") != null && !body.get("fechaBaja").isEmpty()) {
+            fechaBaja = LocalDate.parse(body.get("fechaBaja"));
+        }
+        Miembro m = miembroRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
+        m.setFechaBaja(fechaBaja != null ? fechaBaja : LocalDate.now());
+        m = miembroRepo.save(m);
+        return getMiembroById(m.getId());
+    }
+
+    @Transactional
+    public MiembroResponseDto reactivarMiembro(Long id) {
+        Miembro m = miembroRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException("Miembro no encontrado"));
+        m.setFechaBaja(null);
+        m = miembroRepo.save(m);
+        return getMiembroById(m.getId());
     }
 }

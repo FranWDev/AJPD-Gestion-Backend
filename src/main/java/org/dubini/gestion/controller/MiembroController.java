@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/miembros")
 public class MiembroController {
@@ -52,6 +54,18 @@ public class MiembroController {
             @PathVariable Long miembroId,
             @PathVariable Long historialId) {
         return ResponseEntity.ok(service.deleteHistorialCargo(miembroId, historialId));
+    }
+
+    @PutMapping("/{id}/baja")
+    public ResponseEntity<MiembroResponseDto> darDeBaja(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> body) {
+        return ResponseEntity.ok(service.darDeBaja(id, body));
+    }
+
+    @DeleteMapping("/{id}/baja")
+    public ResponseEntity<MiembroResponseDto> reactivarMiembro(@PathVariable Long id) {
+        return ResponseEntity.ok(service.reactivarMiembro(id));
     }
 
     @DeleteMapping("/{id}")

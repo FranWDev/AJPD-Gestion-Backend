@@ -28,6 +28,13 @@ public class DtoMapper {
         m.setCorreo(dto.getCorreo());
         m.setCargoId(dto.getCargoId());
         m.setEnlaceWhatsapp(dto.getEnlaceWhatsapp());
+        m.setNifCif(dto.getNifCif());
+        m.setNacionalidad(dto.getNacionalidad());
+        m.setDomicilio(dto.getDomicilio());
+        m.setFechaNacimiento(dto.getFechaNacimiento());
+        m.setFechaAlta(dto.getFechaAlta());
+        m.setObservaciones(dto.getObservaciones());
+        m.setFechaBaja(dto.getFechaBaja());
     }
 
     public static MiembroResponseDto toResponseDto(Miembro m, Map<Long, Centro> centroMap, Map<Long, Cargo> cargoMap, Map<Long, Cargo> historyCargoMap) {
@@ -38,6 +45,13 @@ public class DtoMapper {
         dto.setCorreo(m.getCorreo());
         dto.setFechaCargo(m.getFechaCargo());
         dto.setEnlaceWhatsapp(m.getEnlaceWhatsapp());
+        dto.setNifCif(m.getNifCif());
+        dto.setNacionalidad(m.getNacionalidad());
+        dto.setDomicilio(m.getDomicilio());
+        dto.setFechaNacimiento(m.getFechaNacimiento());
+        dto.setFechaAlta(m.getFechaAlta());
+        dto.setObservaciones(m.getObservaciones());
+        dto.setFechaBaja(m.getFechaBaja());
 
         if (m.getCentroId() != null && centroMap != null && centroMap.containsKey(m.getCentroId())) {
             dto.setCentro(toDto(centroMap.get(m.getCentroId())));

@@ -21,5 +21,12 @@ public class MiembroResponseDto {
     private CargoDto cargo;
     private LocalDate fechaCargo;
     private String enlaceWhatsapp;
+    private String nifCif;
+    private String nacionalidad;
+    private String domicilio;
+    private LocalDate fechaNacimiento;
+    private LocalDate fechaAlta;
+    private String observaciones;
+    private LocalDate fechaBaja;
     private Set<HistorialCargoDto> historialCargos;
 }

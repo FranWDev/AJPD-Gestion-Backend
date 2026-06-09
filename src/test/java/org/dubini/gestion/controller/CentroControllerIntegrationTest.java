@@ -115,7 +115,14 @@ public class CentroControllerIntegrationTest {
     @Test
     public void testDeleteCentro_AssignedToMember() throws Exception {
         Centro centro = centroRepository.save(new Centro(null, "Centro Ocupado"));
-        Miembro miembro = new Miembro(null, "Juan", centro.getId(), "123", "juan@test.com", null, LocalDate.now(), "link", new HashSet<>());
+        Miembro miembro = new Miembro();
+        miembro.setNombreRazonSocial("Juan");
+        miembro.setCentroId(centro.getId());
+        miembro.setTelefono("123");
+        miembro.setCorreo("juan@test.com");
+        miembro.setFechaCargo(LocalDate.now());
+        miembro.setEnlaceWhatsapp("link");
+        miembro.setHistorialCargos(new HashSet<>());
         miembroRepository.save(miembro);
 
         mockMvc.perform(delete("/api/centros/" + centro.getId())

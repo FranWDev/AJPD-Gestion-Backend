@@ -121,7 +121,15 @@ public class CargoControllerIntegrationTest {
     public void testDeleteCargo_AssignedToMember() throws Exception {
         Cargo cargo = cargoRepository.save(new Cargo(null, "Cargo Ocupado"));
         Centro centro = centroRepository.save(new Centro(null, "Centro Test"));
-        Miembro miembro = new Miembro(null, "Juan", centro.getId(), "123", "juan@test.com", cargo.getId(), LocalDate.now(), "link", new HashSet<>());
+        Miembro miembro = new Miembro();
+        miembro.setNombreRazonSocial("Juan");
+        miembro.setCentroId(centro.getId());
+        miembro.setTelefono("123");
+        miembro.setCorreo("juan@test.com");
+        miembro.setCargoId(cargo.getId());
+        miembro.setFechaCargo(LocalDate.now());
+        miembro.setEnlaceWhatsapp("link");
+        miembro.setHistorialCargos(new HashSet<>());
         miembroRepository.save(miembro);
 
         mockMvc.perform(delete("/api/cargos/" + cargo.getId())
