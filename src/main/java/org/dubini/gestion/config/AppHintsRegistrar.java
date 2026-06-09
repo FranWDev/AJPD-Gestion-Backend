@@ -1,0 +1,116 @@
+package org.dubini.gestion.config;
+
+import org.springframework.aot.hint.*;
+
+public class AppHintsRegistrar implements RuntimeHintsRegistrar {
+
+    @Override
+    public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+        registerEntity(hints, "org.dubini.gestion.model.Miembro");
+        registerEntity(hints, "org.dubini.gestion.model.Centro");
+        registerEntity(hints, "org.dubini.gestion.model.Cargo");
+        registerEntity(hints, "org.dubini.gestion.model.HistorialCargo");
+
+        registerException(hints, "org.dubini.gestion.exception.ResourceNotFoundException");
+
+        registerSecurityClasses(hints);
+
+        hints.resources().registerPattern("application*.properties");
+        hints.resources().registerPattern("application*.yml");
+        hints.resources().registerPattern("META-INF/**");
+
+        registerJacksonClasses(hints);
+        registerPostgresClasses(hints);
+
+        registerClassIfExists(hints, "org.dubini.gestion.dto.LoginRequest");
+        registerClassIfExists(hints, "org.dubini.gestion.dto.JwtResponse");
+        registerClassIfExists(hints, "org.dubini.gestion.controller.AuthController");
+        registerClassIfExists(hints, "org.dubini.gestion.service.AuthService");
+    }
+
+    private void registerEntity(RuntimeHints hints, String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            hints.reflection().registerType(
+                    clazz,
+                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                    MemberCategory.INVOKE_DECLARED_METHODS,
+                    MemberCategory.DECLARED_FIELDS,
+                    MemberCategory.INVOKE_PUBLIC_METHODS,
+                    MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS);
+            if (java.io.Serializable.class.isAssignableFrom(clazz)) {
+                hints.serialization().registerType((Class<? extends java.io.Serializable>) clazz);
+            }
+        } catch (ClassNotFoundException e) {
+            System.err.println("Entity not found for hints: " + className);
+        }
+    }
+
+    private void registerException(RuntimeHints hints, String className) {
+        try {
+            hints.reflection().registerType(
+                    Class.forName(className),
+                    MemberCategory.INVOKE_DECLARED_CONSTRUCTORS,
+                    MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS,
+                    MemberCategory.DECLARED_FIELDS);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Exception not found for hints: " + className);
+        }
+    }
+
+    private void registerSecurityClasses(RuntimeHints hints) {
+        try {
+            hints.reflection().registerType(
+                    org.springframework.security.core.userdetails.User.class,
+                    MemberCategory.values());
+            hints.reflection().registerType(
+                    org.springframework.security.core.authority.SimpleGrantedAuthority.class,
+                    MemberCategory.values());
+
+            registerClassIfExists(hints, "org.dubini.gestion.security.JwtFilter");
+            registerClassIfExists(hints, "org.dubini.gestion.security.JwtProvider");
+        } catch (Exception e) {
+            System.err.println("Security hints error: " + e.getMessage());
+        }
+    }
+
+    private void registerJacksonClasses(RuntimeHints hints) {
+        try {
+            Class<?> objectMapperClass = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+            hints.reflection().registerType(objectMapperClass, MemberCategory.values());
+            Class<?> jsonNodeClass = Class.forName("com.fasterxml.jackson.databind.JsonNode");
+            hints.reflection().registerType(jsonNodeClass, MemberCategory.values());
+        } catch (Exception e) {
+            System.err.println("Jackson hints error: " + e.getMessage());
+        }
+    }
+
+    private void registerPostgresClasses(RuntimeHints hints) {
+        try {
+            hints.reflection().registerType(
+                    Class.forName("org.postgresql.Driver"),
+                    MemberCategory.values());
+            hints.reflection().registerType(
+                    Class.forName("org.postgresql.util.PGobject"),
+                    MemberCategory.values());
+
+            registerClassIfExists(hints, "org.postgresql.jdbc.PgConnection");
+            registerClassIfExists(hints, "org.postgresql.jdbc.PgStatement");
+            registerClassIfExists(hints, "org.postgresql.jdbc.PgPreparedStatement");
+            
+            registerClassIfExists(hints, "org.springframework.data.convert.ReadingConverter");
+            registerClassIfExists(hints, "org.springframework.data.convert.WritingConverter");
+            registerClassIfExists(hints, "org.springframework.core.convert.converter.Converter");
+        } catch (ClassNotFoundException e) {
+            System.err.println("PostgreSQL hints error: " + e.getMessage());
+        }
+    }
+
+    private void registerClassIfExists(RuntimeHints hints, String className) {
+        try {
+            Class<?> clazz = Class.forName(className);
+            hints.reflection().registerType(clazz, MemberCategory.values());
+        } catch (ClassNotFoundException e) {
+        }
+    }
+}
