@@ -7,6 +7,8 @@ import org.dubini.gestion.dto.PublicationDTO;
 import org.dubini.gestion.service.NewsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -21,10 +23,14 @@ public class NewsController {
         this.service = service;
     }
 
-    @Operation(summary = "Obtener todas las noticias")
+    @Operation(summary = "Obtener noticias paginadas y filtradas o listado completo")
     @GetMapping
-    public ResponseEntity<List<PublicationDTO>> get() {
-        return ResponseEntity.ok(service.get());
+    public ResponseEntity<?> get(
+            @RequestParam(required = false) String search,
+            Pageable pageable,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(service.getNews(search, pageable, page, size));
     }
 
     @Operation(summary = "Obtener noticia por identificador")

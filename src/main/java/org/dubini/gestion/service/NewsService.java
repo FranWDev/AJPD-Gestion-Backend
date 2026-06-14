@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
+import org.dubini.gestion.config.PostgresJsonbWritingConverter;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,9 +29,9 @@ public class NewsService {
     private final NewsRepository newsRepository;
     private final ObjectMapper objectMapper;
     private final CacheInvalidatorService cacheInvalidation;
-    private final org.dubini.gestion.config.PostgresJsonbWritingConverter postgresJsonbWritingConverter;
+    private final PostgresJsonbWritingConverter postgresJsonbWritingConverter;
 
-    public NewsService(NewsRepository newsRepository, ObjectMapper objectMapper, CacheInvalidatorService cacheInvalidation, org.dubini.gestion.config.PostgresJsonbWritingConverter postgresJsonbWritingConverter) {
+    public NewsService(NewsRepository newsRepository, ObjectMapper objectMapper, CacheInvalidatorService cacheInvalidation, PostgresJsonbWritingConverter postgresJsonbWritingConverter) {
         this.newsRepository = newsRepository;
         this.objectMapper = objectMapper;
         this.cacheInvalidation = cacheInvalidation;
@@ -42,15 +46,52 @@ public class NewsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Noticia no encontrada"));
     }
 
-    public List<PublicationDTO> get() {
-        log.debug("Retrieving all news");
-        List<News> newsList = newsRepository.findAllByOrderByCreatedAtDesc();
+    public List<PublicationDTO> getAll(String search) {
+        log.debug("Retrieving all news with search: {}", search);
+        String searchPattern = (search == null || search.trim().isEmpty()) ? null : "%" + search.trim() + "%";
+        
+        List<News> newsList;
+        if (searchPattern == null) {
+            newsList = newsRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            newsList = newsRepository.findBySearchPatternPage(searchPattern, Integer.MAX_VALUE, 0);
+        }
+        
         List<PublicationDTO> publications = newsList.stream()
                 .map(this::parseNewsToDTO)
                 .filter(pub -> pub != null)
                 .collect(Collectors.toList());
         log.debug("Retrieved {} news articles", publications.size());
         return publications;
+    }
+
+    public List<PublicationDTO> getAll() {
+        return getAll(null);
+    }
+
+    public Object getNews(String search, Pageable pageable, Integer page, Integer size) {
+        if (page == null || size == null) {
+            return getAll(search);
+        }
+        return getPaginated(search, pageable);
+    }
+
+    public Page<PublicationDTO> getPaginated(String search, Pageable pageable) {
+        log.debug("Retrieving page {} of size {} with search: {}", pageable.getPageNumber(), pageable.getPageSize(), search);
+        String searchPattern = (search == null || search.trim().isEmpty()) ? null : "%" + search.trim() + "%";
+        
+        long total = newsRepository.countBySearchPatternPage(searchPattern);
+        if (total == 0) {
+            return Page.empty(pageable);
+        }
+        
+        List<News> newsList = newsRepository.findBySearchPatternPage(searchPattern, pageable.getPageSize(), pageable.getOffset());
+        List<PublicationDTO> publications = newsList.stream()
+                .map(this::parseNewsToDTO)
+                .filter(pub -> pub != null)
+                .collect(Collectors.toList());
+                
+        return new PageImpl<>(publications, pageable, total);
     }
 
     @Transactional
@@ -60,11 +101,15 @@ public class NewsService {
         String safeTitle = sanitizeFileName(publicationDTO.getTitle());
 
         try {
-            String jsonContent = objectMapper.writeValueAsString(publicationDTO);
             LocalDateTime createdAt = newsRepository.findById(safeTitle)
                     .map(News::getCreatedAt)
                     .orElse(LocalDateTime.now());
 
+            if (publicationDTO.getCreatedAt() == null) {
+                publicationDTO.setCreatedAt(createdAt.atOffset(java.time.ZoneOffset.UTC).format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+            }
+
+            String jsonContent = objectMapper.writeValueAsString(publicationDTO);
             Object convertedContent = postgresJsonbWritingConverter.convert(jsonContent);
             if (newsRepository.existsById(safeTitle)) {
                 newsRepository.updateNews(safeTitle, convertedContent, createdAt);
