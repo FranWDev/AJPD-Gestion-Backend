@@ -22,7 +22,10 @@ public class CacheConfig {
                 "centro",
                 "cargos",
                 "cargo",
-                "cargoHistorial"
+                "cargoHistorial",
+                "news",
+                "newsList",
+                "newsPage"
         ));
         return cacheManager;
     }

@@ -21,6 +21,11 @@ import org.springframework.data.domain.PageImpl;
 import org.dubini.gestion.config.PostgresJsonbWritingConverter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Cookie;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @Transactional(readOnly = true)
@@ -40,6 +45,7 @@ public class NewsService {
         this.postgresJsonbWritingConverter = postgresJsonbWritingConverter;
     }
 
+    @Cacheable(value = "news", key = "#identifier")
     public PublicationDTO get(String identifier) {
         log.debug("Retrieving news with identifier: {}", identifier);
         String safeTitle = sanitizeFileName(identifier);
@@ -48,6 +54,7 @@ public class NewsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Noticia no encontrada"));
     }
 
+    @Cacheable(value = "newsList", key = "#search != null ? #search : ''")
     public List<PublicationDTO> getAll(String search) {
         log.debug("Retrieving all news with search: {}", search);
         String searchPattern = (search == null || search.trim().isEmpty()) ? null : "%" + search.trim() + "%";
@@ -97,6 +104,7 @@ public class NewsService {
         return getPaginated(search, pageable);
     }
 
+    @Cacheable(value = "newsPage", key = "#search != null ? #search + '_' + #pageable.pageNumber + '_' + #pageable.pageSize : '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<PublicationDTO> getPaginated(String search, Pageable pageable) {
         log.debug("Retrieving page {} of size {} with search: {}", pageable.getPageNumber(), pageable.getPageSize(), search);
         String searchPattern = (search == null || search.trim().isEmpty()) ? null : "%" + search.trim() + "%";
@@ -116,6 +124,11 @@ public class NewsService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "news", allEntries = true),
+        @CacheEvict(value = "newsList", allEntries = true),
+        @CacheEvict(value = "newsPage", allEntries = true)
+    })
     public PublicationDTO save(PublicationDTO publicationDTO) {
         log.debug("Saving news: {}", publicationDTO.getTitle());
         validatePublication(publicationDTO);
@@ -172,17 +185,17 @@ public class NewsService {
             throw new RuntimeException("Error al guardar la noticia", e);
         }
 
-        try {
-            cacheInvalidation.invalidateNewsCache();
-            log.info("News cache invalidated after save");
-        } catch (Exception e) {
-            log.error("Error invalidating cache after save: {}", e.getMessage());
-        }
+        invalidateCacheAfterCommit();
 
         return publicationDTO;
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "news", allEntries = true),
+        @CacheEvict(value = "newsList", allEntries = true),
+        @CacheEvict(value = "newsPage", allEntries = true)
+    })
     public void delete(String identifier) {
         log.debug("Deleting news: {}", identifier);
         String safeTitle = sanitizeFileName(identifier);
@@ -195,11 +208,29 @@ public class NewsService {
         newsRepository.deleteById(safeTitle);
         log.info("News deleted successfully: {}", identifier);
 
-        try {
-            cacheInvalidation.invalidateNewsCache();
-            log.info("News cache invalidated after delete");
-        } catch (Exception e) {
-            log.error("Error invalidating cache after delete: {}", e.getMessage());
+        invalidateCacheAfterCommit();
+    }
+
+    private void invalidateCacheAfterCommit() {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        cacheInvalidation.invalidateNewsCache();
+                        log.info("News cache invalidated after transaction commit");
+                    } catch (Exception e) {
+                        log.error("Error invalidating cache after transaction commit: {}", e.getMessage());
+                    }
+                }
+            });
+        } else {
+            try {
+                cacheInvalidation.invalidateNewsCache();
+                log.info("News cache invalidated immediately");
+            } catch (Exception e) {
+                log.error("Error invalidating cache: {}", e.getMessage());
+            }
         }
     }
 
