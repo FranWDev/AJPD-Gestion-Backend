@@ -35,21 +35,28 @@ public class GoogleDriveConfig {
 
     @Bean
     public GoogleCredentials googleCredentials() throws IOException {
-        if (credentialsJson == null || credentialsJson.trim().isEmpty()) {
-            log.warn("GOOGLE_DRIVE_CREDENTIALS_JSON is empty. GoogleCredentials will be null.");
-            return null;
+        if (credentialsJson != null && !credentialsJson.trim().isEmpty()) {
+            try {
+                log.info("Loading Google Credentials from explicit JSON string.");
+                return GoogleCredentials.fromStream(
+                                new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8)))
+                        .createScoped(Collections.singleton(DriveScopes.DRIVE));
+            } catch (Exception e) {
+                log.error("Failed to load GoogleCredentials from JSON string.", e);
+            }
         }
+
+        // Fallback to Application Default Credentials (ADC) which automatically picks up GOOGLE_APPLICATION_CREDENTIALS file path
         try {
-            return GoogleCredentials.fromStream(
-                            new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8)))
+            log.info("Attempting to load Google Application Default Credentials (ADC).");
+            return GoogleCredentials.getApplicationDefault()
                     .createScoped(Collections.singleton(DriveScopes.DRIVE));
         } catch (Exception e) {
-            log.error("Failed to load GoogleCredentials from JSON string.", e);
-            if (activeProfile.contains("test") || activeProfile.contains("dev") || "default".equals(activeProfile)) {
-                return null;
-            }
-            throw e;
+            log.warn("Could not load Google Application Default Credentials (ADC): {}", e.getMessage());
         }
+
+        log.warn("No Google Credentials could be loaded. Google Drive will run in Mock/No-op mode.");
+        return null;
     }
 
     @Bean

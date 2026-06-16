@@ -97,10 +97,73 @@ public class AppHintsRegistrar implements RuntimeHintsRegistrar {
         registerClassIfExists(hints, "org.dubini.gestion.service.GoogleDriveService$DriveFileDto");
         registerClassIfExists(hints, "org.dubini.gestion.controller.MiembroDocumentoController");
 
-        // Google SDK models
-        registerClassIfExists(hints, "com.google.api.services.drive.Drive");
-        registerClassIfExists(hints, "com.google.api.services.drive.model.File");
-        registerClassIfExists(hints, "com.google.api.services.drive.model.FileList");
+        // Google SDK models and client base classes
+        String[] googleModelClasses = {
+            "com.google.api.client.json.GenericJson",
+            "com.google.api.client.util.GenericData",
+            "com.google.api.client.http.GenericUrl",
+            "com.google.api.services.drive.Drive",
+            "com.google.api.services.drive.model.Drive",
+            "com.google.api.services.drive.model.Comment$QuotedFileContent",
+            "com.google.api.services.drive.model.Reply",
+            "com.google.api.services.drive.model.LabelModification",
+            "com.google.api.services.drive.model.File$LabelInfo",
+            "com.google.api.services.drive.model.File$ShortcutDetails",
+            "com.google.api.services.drive.model.Revision",
+            "com.google.api.services.drive.model.Change",
+            "com.google.api.services.drive.model.CommentList",
+            "com.google.api.services.drive.model.File$Capabilities",
+            "com.google.api.services.drive.model.TeamDrive$Capabilities",
+            "com.google.api.services.drive.model.Drive$Restrictions",
+            "com.google.api.services.drive.model.File$LinkShareMetadata",
+            "com.google.api.services.drive.model.TeamDrive$Restrictions",
+            "com.google.api.services.drive.model.LabelFieldModification",
+            "com.google.api.services.drive.model.About$StorageQuota",
+            "com.google.api.services.drive.model.StartPageToken",
+            "com.google.api.services.drive.model.PermissionList",
+            "com.google.api.services.drive.model.Label",
+            "com.google.api.services.drive.model.Drive$Capabilities",
+            "com.google.api.services.drive.model.Channel",
+            "com.google.api.services.drive.model.TeamDrive",
+            "com.google.api.services.drive.model.Permission",
+            "com.google.api.services.drive.model.Permission$TeamDrivePermissionDetails",
+            "com.google.api.services.drive.model.DriveList",
+            "com.google.api.services.drive.model.About$DriveThemes",
+            "com.google.api.services.drive.model.File$ContentHints$Thumbnail",
+            "com.google.api.services.drive.model.GeneratedIds",
+            "com.google.api.services.drive.model.ChangeList",
+            "com.google.api.services.drive.model.LabelList",
+            "com.google.api.services.drive.model.ModifyLabelsRequest",
+            "com.google.api.services.drive.model.About",
+            "com.google.api.services.drive.model.File$ImageMediaMetadata$Location",
+            "com.google.api.services.drive.model.Permission$PermissionDetails",
+            "com.google.api.services.drive.model.ContentRestriction",
+            "com.google.api.services.drive.model.User",
+            "com.google.api.services.drive.model.Comment",
+            "com.google.api.services.drive.model.File$ContentHints",
+            "com.google.api.services.drive.model.File$VideoMediaMetadata",
+            "com.google.api.services.drive.model.Drive$BackgroundImageFile",
+            "com.google.api.services.drive.model.ModifyLabelsResponse",
+            "com.google.api.services.drive.model.File",
+            "com.google.api.services.drive.model.TeamDriveList",
+            "com.google.api.services.drive.model.TeamDrive$BackgroundImageFile",
+            "com.google.api.services.drive.model.LabelField",
+            "com.google.api.services.drive.model.File$ImageMediaMetadata",
+            "com.google.api.services.drive.model.ReplyList",
+            "com.google.api.services.drive.model.RevisionList",
+            "com.google.api.services.drive.model.About$TeamDriveThemes",
+            "com.google.api.services.drive.model.FileList",
+            // Google API Client JSON and Error Models
+            "com.google.api.client.googleapis.json.GoogleJsonError",
+            "com.google.api.client.googleapis.json.GoogleJsonError$ErrorInfo",
+            "com.google.api.client.googleapis.json.GoogleJsonError$Details",
+            "com.google.api.client.googleapis.json.GoogleJsonError$ParameterViolations",
+            "com.google.api.client.googleapis.json.GoogleJsonErrorContainer",
+            "com.google.api.client.googleapis.json.GoogleJsonResponseException"
+        };
+        for (String className : googleModelClasses) {
+            registerClassIfExists(hints, className);
+        }
 
         registerClassIfExists(hints, "org.springdoc.core.configuration.SpringDocConfiguration");
         registerClassIfExists(hints, "org.springdoc.core.properties.SpringDocConfigProperties");
