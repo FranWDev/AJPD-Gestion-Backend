@@ -59,6 +59,9 @@ public class MiembroResponseDto {
     
     @Schema(description = "Fecha de baja (si aplica)", example = "null")
     private LocalDate fechaBaja;
+
+    @Schema(description = "Pronombres del miembro", example = "Él")
+    private String pronombre;
     
     @Schema(description = "Historial de cargos ocupados")
     private Set<HistorialCargoDto> historialCargos;

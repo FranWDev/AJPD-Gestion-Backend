@@ -22,6 +22,13 @@ public class MiembroDocumentoController {
         this.googleDriveService = googleDriveService;
     }
 
+    @Operation(summary = "Listar todos los documentos de un miembro", description = "Obtiene los archivos del miembro en las carpetas DNI, FOTO y EXTRA de Google Drive en una sola llamada")
+    @GetMapping
+    public ResponseEntity<Map<String, List<DriveFileDto>>> listAllDocumentos(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(googleDriveService.listAllMemberFiles(id));
+    }
+
     @Operation(summary = "Listar documentos de un miembro por tipo", description = "Obtiene los archivos del miembro en la carpeta DNI o FOTO de Google Drive")
     @GetMapping("/{tipo}")
     public ResponseEntity<List<DriveFileDto>> listDocumentos(
@@ -69,8 +76,8 @@ public class MiembroDocumentoController {
     }
 
     private void validateTipo(String tipo) {
-        if (!"DNI".equalsIgnoreCase(tipo) && !"FOTO".equalsIgnoreCase(tipo)) {
-            throw new IllegalArgumentException("El tipo de documento debe ser DNI o FOTO");
+        if (!"DNI".equalsIgnoreCase(tipo) && !"FOTO".equalsIgnoreCase(tipo) && !"EXTRA".equalsIgnoreCase(tipo)) {
+            throw new IllegalArgumentException("El tipo de documento debe ser DNI, FOTO o EXTRA");
         }
     }
 

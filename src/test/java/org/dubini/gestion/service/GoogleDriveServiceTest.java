@@ -78,9 +78,9 @@ class GoogleDriveServiceTest {
     void testCreateMemberFolders() throws IOException {
         googleDriveService.createMemberFolders(123L);
 
-        // Verify that create was called for SOCIO_123, DNI, and FOTO (3 folders total)
-        verify(filesMock, times(3)).create(any(File.class));
-        verify(createMock, times(3)).execute();
+        // Verify that create was called for SOCIO_123, DNI, FOTO, and EXTRA (4 folders total)
+        verify(filesMock, times(4)).create(any(File.class));
+        verify(createMock, times(4)).execute();
     }
 
     @Test

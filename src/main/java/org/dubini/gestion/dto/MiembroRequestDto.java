@@ -60,4 +60,7 @@ public class MiembroRequestDto {
 
     @Schema(description = "Fecha de baja", example = "null")
     private LocalDate fechaBaja;
+
+    @Schema(description = "Pronombres del miembro", example = "Él")
+    private String pronombre;
 }

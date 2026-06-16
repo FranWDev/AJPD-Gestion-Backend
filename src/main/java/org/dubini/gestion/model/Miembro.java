@@ -36,6 +36,7 @@ public class Miembro {
     private LocalDate fechaAlta;
     private String observaciones;
     private LocalDate fechaBaja;
+    private String pronombre;
 
     @MappedCollection(idColumn = "miembro_id")
     private Set<HistorialCargo> historialCargos = new HashSet<>();

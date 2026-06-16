@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
@@ -111,6 +112,7 @@ public class GoogleDriveService {
             // Create subfolders
             getOrCreateFolder("DNI", memberFolderId);
             getOrCreateFolder("FOTO", memberFolderId);
+            getOrCreateFolder("EXTRA", memberFolderId);
 
             log.info("Folders successfully created for member: {}", memberFolderName);
         } catch (IOException e) {
@@ -158,6 +160,103 @@ public class GoogleDriveService {
             return files;
         } catch (IOException e) {
             log.error("Failed to list files from Google Drive for member {}", memberId, e);
+            throw new RuntimeException("Error al listar los archivos de Google Drive", e);
+        }
+    }
+
+    /**
+     * Lists all files for a member across DNI, FOTO, and EXTRA folders using a highly optimized 3-request query flow.
+     */
+    public Map<String, List<DriveFileDto>> listAllMemberFiles(Long memberId) {
+        if (!isConfigured()) {
+            log.warn("Google Drive Service is not configured. Returning empty map.");
+            return Map.of("dni", List.of(), "foto", List.of(), "extra", List.of());
+        }
+
+        try {
+            // 1. Find the member base folder ID (e.g. SOCIO_123)
+            String memberFolderId = getFolderId("SOCIO_" + memberId, parentFolderId);
+            if (memberFolderId == null) {
+                return Map.of("dni", List.of(), "foto", List.of(), "extra", List.of());
+            }
+
+            // 2. Find all child subfolders of SOCIO_123 in a single query
+            FileList subfoldersResult = driveService.files().list()
+                    .setQ("mimeType = '" + FOLDER_MIME + "' and '" + memberFolderId + "' in parents and trashed = false")
+                    .setSpaces("drive")
+                    .setFields("files(id, name)")
+                    .setSupportsAllDrives(true)
+                    .setIncludeItemsFromAllDrives(true)
+                    .execute();
+
+            String dniFolderId = null;
+            String fotoFolderId = null;
+            String extraFolderId = null;
+
+            if (subfoldersResult.getFiles() != null) {
+                for (File f : subfoldersResult.getFiles()) {
+                    if ("DNI".equalsIgnoreCase(f.getName())) {
+                        dniFolderId = f.getId();
+                    } else if ("FOTO".equalsIgnoreCase(f.getName())) {
+                        fotoFolderId = f.getId();
+                    } else if ("EXTRA".equalsIgnoreCase(f.getName())) {
+                        extraFolderId = f.getId();
+                    }
+                }
+            }
+
+            List<DriveFileDto> dniFiles = new ArrayList<>();
+            List<DriveFileDto> fotoFiles = new ArrayList<>();
+            List<DriveFileDto> extraFiles = new ArrayList<>();
+
+            // 3. Find all files under these subfolders in a single query
+            List<String> parentConditions = new ArrayList<>();
+            if (dniFolderId != null) parentConditions.add("'" + dniFolderId + "' in parents");
+            if (fotoFolderId != null) parentConditions.add("'" + fotoFolderId + "' in parents");
+            if (extraFolderId != null) parentConditions.add("'" + extraFolderId + "' in parents");
+
+            if (!parentConditions.isEmpty()) {
+                String q = "(" + String.join(" or ", parentConditions) + ") and trashed = false";
+                FileList filesResult = driveService.files().list()
+                        .setQ(q)
+                        .setSpaces("drive")
+                        .setFields("files(id, name, webViewLink, thumbnailLink, size, mimeType, parents)")
+                        .setSupportsAllDrives(true)
+                        .setIncludeItemsFromAllDrives(true)
+                        .execute();
+
+                if (filesResult.getFiles() != null) {
+                    for (File file : filesResult.getFiles()) {
+                        DriveFileDto dto = new DriveFileDto(
+                                file.getId(),
+                                file.getName(),
+                                file.getWebViewLink(),
+                                file.getSize() != null ? file.getSize() : 0L,
+                                file.getMimeType(),
+                                file.getThumbnailLink()
+                        );
+
+                        if (file.getParents() != null && !file.getParents().isEmpty()) {
+                            String parentId = file.getParents().get(0);
+                            if (parentId.equals(dniFolderId)) {
+                                dniFiles.add(dto);
+                            } else if (parentId.equals(fotoFolderId)) {
+                                fotoFiles.add(dto);
+                            } else if (parentId.equals(extraFolderId)) {
+                                extraFiles.add(dto);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Map.of(
+                "dni", dniFiles,
+                "foto", fotoFiles,
+                "extra", extraFiles
+            );
+        } catch (IOException e) {
+            log.error("Failed to list all files from Google Drive for member {}", memberId, e);
             throw new RuntimeException("Error al listar los archivos de Google Drive", e);
         }
     }

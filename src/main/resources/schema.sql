@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS miembros (
     fecha_nacimiento DATE,
     fecha_alta DATE,
     observaciones TEXT,
-    fecha_baja DATE
+    fecha_baja DATE,
+    pronombre VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS historial_cargos (

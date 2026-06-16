@@ -39,6 +39,7 @@ public class DtoMapper {
         m.setFechaAlta(dto.getFechaAlta());
         m.setObservaciones(dto.getObservaciones());
         m.setFechaBaja(dto.getFechaBaja());
+        m.setPronombre(dto.getPronombre());
     }
 
     public static MiembroResponseDto toResponseDto(Miembro m, Map<Long, Centro> centroMap, Map<Long, Cargo> cargoMap, Map<Long, Cargo> historyCargoMap) {
@@ -56,6 +57,7 @@ public class DtoMapper {
         dto.setFechaAlta(m.getFechaAlta());
         dto.setObservaciones(m.getObservaciones());
         dto.setFechaBaja(m.getFechaBaja());
+        dto.setPronombre(m.getPronombre());
 
         if (m.getCentroId() != null && centroMap != null && centroMap.containsKey(m.getCentroId())) {
             dto.setCentro(toDto(centroMap.get(m.getCentroId())));
